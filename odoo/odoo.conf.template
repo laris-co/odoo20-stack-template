@@ -1,0 +1,16 @@
+[options]
+admin_passwd = __ADMIN_PASSWD__
+db_host = db
+db_port = 5432
+db_user = odoo
+db_password = __PG_PASSWORD__
+; Odoo 20 binds 127.0.0.1 by default, unreachable from other containers
+http_interface = 0.0.0.0
+proxy_mode = True
+list_db = False
+dbfilter = ^__ODOO_DB__$
+workers = 2
+gevent_port = 8072
+max_cron_threads = 1
+addons_path = /mnt/extra-addons
+data_dir = /var/lib/odoo

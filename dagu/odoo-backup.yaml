@@ -1,0 +1,15 @@
+# Nightly Odoo backup: database (pg_dump custom format) + filestore tar.
+description: Odoo 20 — pg_dump + filestore tar
+schedule: "0 1 * * *"
+tags: [odoo, backup]
+hist_retention_days: 60
+env:                         # Dagu does not pass container env to steps
+  - PGHOST: ${PGHOST}
+  - PGUSER: ${PGUSER}
+  - PGPASSWORD: ${PGPASSWORD}
+  - ODOO_DB: ${ODOO_DB}
+steps:
+  - name: dump
+    command: bash -c 'pg_dump -Fc -d "$ODOO_DB" -f /snapshots/odoo-$(date +%Y%m%d-%H%M).dump && ls -la /snapshots | tail -3'
+  - name: filestore
+    command: bash -c 'tar -C /filestore -czf /snapshots/filestore-$(date +%Y%m%d-%H%M).tar.gz . && ls -la /snapshots | tail -3'

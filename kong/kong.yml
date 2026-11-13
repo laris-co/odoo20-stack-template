@@ -1,0 +1,30 @@
+# Kong DB-less: the only door to Odoo. Tailnet requests reach Odoo; the database manager never does.
+# A public host (later) goes through the same routes; /web/database stays 404 for everyone.
+_format_version: "3.0"
+_transform: true
+
+services:
+  - name: odoo-ws
+    url: http://odoo:8072
+    routes:
+      - name: odoo-ws
+        paths: ["/websocket"]
+        strip_path: false
+        preserve_host: true
+
+  - name: odoo
+    url: http://odoo:8069
+    routes:
+      - name: odoo
+        paths: ["/"]
+        strip_path: false
+        preserve_host: true
+
+  - name: deny-dbmanager
+    url: http://127.0.0.1:9
+    routes:
+      - name: deny-dbmanager
+        paths: ["/web/database"]
+    plugins:
+      - name: request-termination
+        config: { status_code: 404, message: "not here" }

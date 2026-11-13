@@ -1,0 +1,4 @@
+.env
+odoo/odoo.local.conf
+*.bak*
+DEPLOYED
