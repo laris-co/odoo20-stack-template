@@ -4,8 +4,8 @@ Odoo 20 (Community) + PostgreSQL 17 behind Kong, nightly backups with Dagu: one 
 every port on 127.0.0.1, reached over a Tailscale tailnet with `tailscale serve`. Nothing listens on the LAN
 or a public IP.
 
-Tested on 2026-11-12/13: a fresh Ubuntu 24.04 KVM guest (4 vCPU / 8 GB / 60 GB), `./setup.sh` to a working
-login, a backup, and a restore into a scratch database.
+Tested 2026-11-12/13 on two fresh Ubuntu 24.04 KVM guests: 4 vCPU / 8 GB / 60 GB (production) and
+2 vCPU / 2 GB / 20 GB (`./setup.sh` in 102 s, demo data for 6 apps in 51 s, a scheduled backup and a restore).
 
 ## Architecture
 
@@ -23,7 +23,7 @@ Needs Docker with the compose plugin, and Tailscale if you want HTTPS on a tailn
 
 ```
 git clone https://github.com/laris-co/odoo20-stack-template odoo20-stack && cd odoo20-stack
-cp .env.example .env      # set PUBLIC_URL (and DATA_ROOT if not /srv/odoo20/data); leave secrets empty
+cp .env.example .env      # PUBLIC_URL stays empty until tailscale serve answers; leave secrets empty
 ./setup.sh                # random secrets into .env, odoo.local.conf, dirs, database "odoo", start, verify
 ./setup.sh verify
 sudo tailscale serve --bg --https=443 http://127.0.0.1:8100
@@ -66,6 +66,10 @@ snapshots off the machine yourself. `./setup.sh verify` prints the newest snapsh
 
 Keep it tailnet-only until you need otherwise. Before any public host: a Tailscale ACL tag so the public node can
 reach only Kong, then a reverse proxy with its own auth in front; `/web/database` stays 404.
+
+## Guide
+
+[docs/guide](docs/guide/README.md): install to a paid invoice, 27 real screenshots, and the errors you will meet.
 
 ## License
 

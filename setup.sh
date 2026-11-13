@@ -51,7 +51,6 @@ for k in PG_PASSWORD ODOO_ADMIN_PASSWD DAGU_ADMIN_PASSWORD; do
   [ -n "$(getenv $k)" ] || setenv $k "$(openssl rand -base64 24 | tr -d '/+=')"
 done
 [ -n "$(getenv DAGU_TOKEN_SECRET)" ] || setenv DAGU_TOKEN_SECRET "$(openssl rand -hex 32)"
-setenv HOST_UID "$(id -u)"; setenv HOST_GID "$(id -g)"
 DATA_ROOT=$(getenv DATA_ROOT); [ -n "$DATA_ROOT" ] || die "DATA_ROOT empty"
 DB=$(getenv ODOO_DB); DB=${DB:-odoo}
 
@@ -59,6 +58,10 @@ say "odoo.local.conf (gitignored, holds admin_passwd)"
 sed -e "s|__ADMIN_PASSWD__|$(getenv ODOO_ADMIN_PASSWD)|" -e "s|__PG_PASSWORD__|$(getenv PG_PASSWORD)|" \
     -e "s|__ODOO_DB__|$DB|" odoo/odoo.conf.template > odoo/odoo.local.conf
 chmod 644 odoo/odoo.local.conf
+
+say "pull images (odoo:20.0 is about 1 GB on a fresh host)"
+docker compose pull -q db odoo kong
+docker pull -q alpine >/dev/null
 
 say "data dirs under $DATA_ROOT"
 mkdir -p "$DATA_ROOT"/{pg,filestore,dagu,snapshots}
@@ -72,7 +75,7 @@ docker compose build -q dagu
 
 say "create database $DB (base module) if missing"
 if ! docker compose exec -T db psql -U odoo -d postgres -tAc "select 1 from pg_database where datname='$DB'" | grep -q 1; then
-  docker compose run --rm odoo odoo -c /etc/odoo/odoo.conf -d "$DB" -i base --stop-after-init --without-demo=all \
+  docker compose run --rm odoo odoo -c /etc/odoo/odoo.conf -d "$DB" -i base --stop-after-init \
     || die "database init failed (docker compose logs odoo)"
 fi
 
@@ -86,7 +89,7 @@ if [ -n "$U" ]; then
   docker compose exec -T db psql -U odoo -d "$DB" -qc \
     "insert into ir_config_parameter (key, value) values ('web.base.url', '$U'), ('web.base.url.freeze', 'True')
      on conflict (key) do update set value = excluded.value" >/dev/null
-  say "done. Odoo: $U  (tailnet only; local: http://127.0.0.1:$(getenv KONG_PORT))"
+  say "done. Odoo: $U  (local: http://127.0.0.1:$(getenv KONG_PORT))"
 else
   say "done. Odoo: http://127.0.0.1:$(getenv KONG_PORT) — set PUBLIC_URL in .env after: sudo tailscale serve --bg --https=443 http://127.0.0.1:$(getenv KONG_PORT)"
 fi
